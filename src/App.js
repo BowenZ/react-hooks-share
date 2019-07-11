@@ -20,6 +20,7 @@ export default class App extends React.Component {
   }
 
   componentDidMount() {
+    document.title = this.state.waveform
     window.addEventListener('keydown', this.handleKeyDown)
     window.addEventListener('keyup', this.handleKeyUp)
   }
@@ -27,6 +28,10 @@ export default class App extends React.Component {
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown)
     window.removeEventListener('keyup', this.handleKeyUp)
+  }
+
+  componentDidUpdate(){
+    document.title = this.state.waveform
   }
 
   play(index) {
