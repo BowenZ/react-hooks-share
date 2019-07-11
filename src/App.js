@@ -3,7 +3,7 @@ import Voice from './voice'
 import Piano from './Piano'
 
 const voice = new Voice()
-const keys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';']
+const KEYS = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';']
 
 export default class App extends React.Component {
   constructor(props) {
@@ -16,6 +16,7 @@ export default class App extends React.Component {
     this.handleChangeWave = this.handleChangeWave.bind(this)
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleKeyUp = this.handleKeyUp.bind(this)
+    this.handlePianoClick = this.handlePianoClick.bind(this)
   }
 
   componentDidMount() {
@@ -34,14 +35,14 @@ export default class App extends React.Component {
 
   handleKeyDown(e) {
     console.log('====down====')
-    const keyIndex = keys.indexOf(e.key)
+    const keyIndex = KEYS.indexOf(e.key)
     if (keyIndex < 0) {
       return
     }
     this.setState({
       activeIndex: keyIndex
     })
-    this.play(keyIndex)
+    voice.play(keyIndex, this.state.waveform)
   }
 
   handleKeyUp() {
@@ -54,6 +55,10 @@ export default class App extends React.Component {
     this.setState({
       waveform: e.target.value
     })
+  }
+
+  handlePianoClick(index){
+    voice.play(index, this.state.waveform)
   }
 
   render() {
@@ -78,7 +83,7 @@ export default class App extends React.Component {
           <Piano
             activeIndex={this.state.activeIndex}
             onClick={index => {
-              this.play(index)
+              this.handlePianoClick(index)
             }}
           />
         </div>
