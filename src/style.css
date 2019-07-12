@@ -23,6 +23,7 @@ body,
   height: 300px;
   border-radius: 20px;
   transform: scale(1);
+  outline: none;
 }
 
 .controls {

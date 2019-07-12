@@ -1,36 +1,39 @@
 import React from 'react'
 import Voice from './voice'
-import Piano from './Piano'
+import Keyboard from './Keyboard'
+import fetchData from './http'
 
 const voice = new Voice()
 const KEYS = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';']
 
-export default class App extends React.Component {
+class Piano extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       waveform: 'sine',
-      activeIndex: -1
+      activeIndex: -1,
+      loading: false
     }
+
+    this.pianoRef = React.createRef()
 
     this.handleChangeWave = this.handleChangeWave.bind(this)
     this.handleKeyDown = this.handleKeyDown.bind(this)
     this.handleKeyUp = this.handleKeyUp.bind(this)
-    this.handlePianoClick = this.handlePianoClick.bind(this)
+    this.handleClickKeyboard = this.handleClickKeyboard.bind(this)
+    this.handleAutoPlay = this.handleAutoPlay.bind(this)
   }
 
   componentDidMount() {
     document.title = this.state.waveform
-    window.addEventListener('keydown', this.handleKeyDown)
-    window.addEventListener('keyup', this.handleKeyUp)
+    this.pianoRef.current.focus()
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown)
-    window.removeEventListener('keyup', this.handleKeyUp)
+    console.log('====unmount====')
   }
 
-  componentDidUpdate(){
+  componentDidUpdate() {
     document.title = this.state.waveform
   }
 
@@ -62,14 +65,65 @@ export default class App extends React.Component {
     })
   }
 
-  handlePianoClick(index){
+  handleClickKeyboard(index) {
     voice.play(index, this.state.waveform)
+  }
+
+  autoPlay(music) {
+    let currentSection
+    let currentPitch
+    const timer = setInterval(() => {
+      if (!music.length && !currentSection.length) {
+        clearInterval(timer)
+        this.setState({
+          activeIndex: -1
+        })
+        return
+      }
+      if ((!currentSection || !currentSection.length) && music.length) {
+        currentSection = Array.from(music.shift())
+        currentSection.unshift(null)
+      }
+      currentPitch = currentSection.shift()
+      this.setState(
+        {
+          activeIndex: currentPitch - 1
+        },
+        () => {
+          setTimeout(() => {
+            this.setState({
+              activeIndex: -1
+            })
+          }, 200)
+        }
+      )
+      currentPitch && voice.play(currentPitch - 1, this.state.waveform)
+    }, 300)
+  }
+
+  handleAutoPlay() {
+    this.setState({
+      loading: true
+    })
+    fetchData().then(res => {
+      console.log('====res====', res)
+      this.setState({
+        loading: false
+      })
+      this.autoPlay(res.data)
+    })
   }
 
   render() {
     return (
       <div className="wrapper">
-        <div className="piano">
+        <div
+          className="piano"
+          tabIndex="0"
+          ref={this.pianoRef}
+          onKeyDown={this.handleKeyDown}
+          onKeyUp={this.handleKeyUp}
+        >
           <div className="controls">
             <div>
               <label htmlFor="waveform">Waveform</label>
@@ -84,15 +138,44 @@ export default class App extends React.Component {
                 <option value="square">Square</option>
               </select>
             </div>
+            {this.state.loading && <div>loading</div>}
+            <div>
+              <button onClick={this.handleAutoPlay}>auto play</button>
+            </div>
           </div>
-          <Piano
+          <Keyboard
             activeIndex={this.state.activeIndex}
             onClick={index => {
-              this.handlePianoClick(index)
+              this.handleClickKeyboard(index)
             }}
           />
         </div>
       </div>
+    )
+  }
+}
+
+export default class App extends React.Component {
+  state = {
+    showPiano: true
+  }
+
+  render() {
+    return (
+      <>
+        <div>
+          <button
+            onClick={() => {
+              this.setState({
+                showPiano: false
+              })
+            }}
+          >
+            distroy
+          </button>
+        </div>
+        {this.state.showPiano ? <Piano /> : null}
+      </>
     )
   }
 }

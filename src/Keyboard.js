@@ -11,7 +11,7 @@ function Key(props) {
   )
 }
 
-export default function Piano(props) {
+export default function Keyboard(props) {
   return (
     <div className="keys">
       {new Array(10).fill(null).map((item, index) => {

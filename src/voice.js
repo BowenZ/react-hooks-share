@@ -21,14 +21,11 @@ export default class Voice {
       987.77,
       1046.5
     ]
-    this.start = 0
-    this.direction = 1
   }
 
   play(index, waveform) {
     const audioCtx = this.audioCtx
     // 改变索引，下一次hover时候使用
-    this.start = this.start + this.direction
 
     // 创建一个OscillatorNode, 它表示一个周期性波形（振荡），基本上来说创造了一个音调
     var oscillator = audioCtx.createOscillator()
