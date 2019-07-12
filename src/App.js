@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Voice from './voice'
 import Keyboard from './Keyboard'
 import fetchData from './http'
@@ -6,78 +6,50 @@ import fetchData from './http'
 const voice = new Voice()
 const KEYS = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';']
 
-class Piano extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      waveform: 'sine',
-      activeIndex: -1,
-      loading: false
+function Piano(props) {
+  const [waveform, setWaveform] = useState('sine')
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [loading, setLoading] = useState(false)
+  const pianoRef = useRef()
+
+  useEffect(() => {
+    console.log('====mount====')
+    document.title = waveform
+    pianoRef.current.focus()
+    return () => {
+      console.log('====unmount====')
     }
+  }, [waveform])
 
-    this.pianoRef = React.createRef()
-
-    this.handleChangeWave = this.handleChangeWave.bind(this)
-    this.handleKeyDown = this.handleKeyDown.bind(this)
-    this.handleKeyUp = this.handleKeyUp.bind(this)
-    this.handleClickKeyboard = this.handleClickKeyboard.bind(this)
-    this.handleAutoPlay = this.handleAutoPlay.bind(this)
-  }
-
-  componentDidMount() {
-    document.title = this.state.waveform
-    this.pianoRef.current.focus()
-  }
-
-  componentWillUnmount() {
-    console.log('====unmount====')
-  }
-
-  componentDidUpdate() {
-    document.title = this.state.waveform
-  }
-
-  play(index) {
-    voice.play(index, this.state.waveform)
-  }
-
-  handleKeyDown(e) {
+  const handleKeyDown = e => {
     console.log('====down====')
     const keyIndex = KEYS.indexOf(e.key)
     if (keyIndex < 0) {
       return
     }
-    this.setState({
-      activeIndex: keyIndex
-    })
-    voice.play(keyIndex, this.state.waveform)
+    setActiveIndex(keyIndex)
+    voice.play(keyIndex, waveform)
   }
 
-  handleKeyUp() {
+  const handleKeyUp = () => {
     console.log('====up====')
-    this.setState({
-      activeIndex: -1
-    })
+    setActiveIndex(-1)
   }
-  handleChangeWave(e) {
-    this.setState({
-      waveform: e.target.value
-    })
+  const handleChangeWave = e => {
+    setWaveform(e.target.value)
   }
 
-  handleClickKeyboard(index) {
-    voice.play(index, this.state.waveform)
+  const handleClickKeyboard = index => {
+    voice.play(index, waveform)
   }
 
-  autoPlay(music) {
+  const autoPlay = music => {
     let currentSection
     let currentPitch
     const timer = setInterval(() => {
       if (!music.length && !currentSection.length) {
         clearInterval(timer)
-        this.setState({
-          activeIndex: -1
-        })
+        setActiveIndex(-1)
         return
       }
       if ((!currentSection || !currentSection.length) && music.length) {
@@ -85,97 +57,77 @@ class Piano extends React.Component {
         currentSection.unshift(null)
       }
       currentPitch = currentSection.shift()
-      this.setState(
-        {
-          activeIndex: currentPitch - 1
-        },
-        () => {
-          setTimeout(() => {
-            this.setState({
-              activeIndex: -1
-            })
-          }, 200)
-        }
-      )
-      currentPitch && voice.play(currentPitch - 1, this.state.waveform)
+      setActiveIndex(currentPitch - 1)
+      setTimeout(() => {
+        setActiveIndex(-1)
+      }, 200)
+      currentPitch && voice.play(currentPitch - 1, waveform)
     }, 300)
   }
 
-  handleAutoPlay() {
-    this.setState({
-      loading: true
-    })
+  const handleAutoPlay = () => {
+    setLoading(true)
     fetchData().then(res => {
       console.log('====res====', res)
-      this.setState({
-        loading: false
-      })
-      this.autoPlay(res.data)
+      setLoading(false)
+      autoPlay(res.data)
     })
   }
 
-  render() {
-    return (
-      <div className="wrapper">
-        <div
-          className="piano"
-          tabIndex="0"
-          ref={this.pianoRef}
-          onKeyDown={this.handleKeyDown}
-          onKeyUp={this.handleKeyUp}
-        >
-          <div className="controls">
-            <div>
-              <label htmlFor="waveform">Waveform</label>
-              <select
-                className="js-control"
-                value={this.state.waveform}
-                onChange={this.handleChangeWave}
-              >
-                <option value="sine">Sine</option>
-                <option value="triangle">Triangle</option>
-                <option value="sawtooth">Sawtooth</option>
-                <option value="square">Square</option>
-              </select>
-            </div>
-            {this.state.loading && <div>loading</div>}
-            <div>
-              <button onClick={this.handleAutoPlay}>auto play</button>
-            </div>
+  return (
+    <div className="wrapper">
+      <div
+        className="piano"
+        tabIndex="0"
+        ref={pianoRef}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
+      >
+        <div className="controls">
+          <div>
+            <label htmlFor="waveform">Waveform</label>
+            <select
+              className="js-control"
+              value={waveform}
+              onChange={handleChangeWave}
+            >
+              <option value="sine">Sine</option>
+              <option value="triangle">Triangle</option>
+              <option value="sawtooth">Sawtooth</option>
+              <option value="square">Square</option>
+            </select>
           </div>
-          <Keyboard
-            activeIndex={this.state.activeIndex}
-            onClick={index => {
-              this.handleClickKeyboard(index)
-            }}
-          />
+          {loading && <div>loading</div>}
+          <div>
+            <button onClick={handleAutoPlay}>auto play</button>
+          </div>
         </div>
+        <Keyboard
+          activeIndex={activeIndex}
+          onClick={index => {
+            handleClickKeyboard(index)
+          }}
+        />
       </div>
-    )
-  }
+    </div>
+  )
 }
 
-export default class App extends React.Component {
-  state = {
-    showPiano: true
-  }
+export default function App(props) {
+  const [showPiano, setShowPiano] = useState(true)
 
-  render() {
-    return (
-      <>
-        <div>
-          <button
-            onClick={() => {
-              this.setState({
-                showPiano: false
-              })
-            }}
-          >
-            distroy
-          </button>
-        </div>
-        {this.state.showPiano ? <Piano /> : null}
-      </>
-    )
-  }
+  return (
+    <>
+      <div>
+        <button
+          onClick={() => {
+            setShowPiano(false)
+          }}
+        >
+          distroy
+        </button>
+      </div>
+      {showPiano ? <Piano /> : null}
+    </>
+  )
 }
